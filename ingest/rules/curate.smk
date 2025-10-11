@@ -57,6 +57,10 @@ rule curate:
             | augur curate rename \
                 --field-map {params.field_map:q} \
             | augur curate normalize-strings \
+            | augur curate parse-genbank-location \
+                --location-field {params.genbank_location_field:q} \
+            | augur curate apply-geolocation-rules \
+                --geolocation-rules {input.geolocation_rules:q} \
             | augur curate apply-record-annotations \
                 --annotations {input.annotations:q} \
                 --id-field {params.annotations_id:q} \

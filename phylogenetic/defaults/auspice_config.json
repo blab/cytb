@@ -25,11 +25,17 @@
       "key": "order_name",
       "title": "Order",
       "type": "categorical"
+    },
+    {
+      "key": "country",
+      "title": "Country",
+      "type": "categorical"
     }
   ],
   "display_defaults": {
     "color_by": "family",
-    "map_triplicate": false,
+    "geo_resolution": "country",
+    "map_triplicate": true,
     "tip_label": "common_name",
     "layout": "unrooted"
   },
@@ -38,14 +44,23 @@
     "organism_name",
     "common_name",
     "family",
-    "order_name"
+    "order_name",
+    "country"
   ],
   "filters": [
     "family",
-    "order_name"
+    "order_name",
+    "country"
   ],
   "panels": [
     "tree",
+    "map",
     "entropy"
+  ],
+  "geo_resolutions": [
+    {
+      "key": "country",
+      "title": "Country"
+    }
   ]
 }

@@ -114,6 +114,7 @@ curate:
     'sequence_length',
     'collection_date',
     'country',
+    'division',
     'location',
     'lat_lon',
     'specimen_voucher',
