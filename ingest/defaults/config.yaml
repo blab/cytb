@@ -6,7 +6,7 @@
 
 # Required to fetch from NCBI via Entrez
 # Fetching configuration
-max_sequences: 100  # Maximum number of sequences to fetch
+max_sequences: 500  # Maximum number of sequences to fetch
 min_sequence_length: 1000  # Minimum cytb sequence length (bp)
 max_sequence_length: 1300  # Maximum cytb sequence length (bp)
 quality_threshold: 0.95  # Minimum sequence quality (max 5% ambiguous bases)
@@ -20,6 +20,7 @@ deduplicate_by_species: true  # Keep only one sequence per species
 entrez_metadata_fields:
   - accession
   - organism
+  - common_name
   - family
   - order
   - taxonomy
@@ -47,6 +48,7 @@ curate:
   field_map:
     accession: accession
     organism: organism_name
+    common_name: common_name
     family: family
     order: order_name
     taxonomy: taxonomy
@@ -104,6 +106,7 @@ curate:
   metadata_columns: [
     'accession',
     'organism_name',
+    'common_name',
     'family',
     'order_name',
     'taxonomy',

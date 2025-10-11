@@ -194,6 +194,59 @@ def fetch_cytb_sequences(args):
 
     return sequences
 
+def fetch_common_names(sequences, email, api_key=None):
+    """Fetch common names from NCBI Taxonomy for unique species."""
+    Entrez.email = email
+    if api_key:
+        Entrez.api_key = api_key
+
+    # Get unique species names
+    unique_species = list(set(m["organism"] for r, m in sequences))
+    print(f"\nFetching common names for {len(unique_species)} unique species...", file=sys.stderr)
+
+    common_names = {}
+    batch_size = 20  # Process in batches to be efficient
+
+    for i in range(0, len(unique_species), batch_size):
+        batch = unique_species[i:i+batch_size]
+        print(f"  Processing batch {i//batch_size + 1}: species {i+1}-{min(i+batch_size, len(unique_species))}", file=sys.stderr)
+
+        for species in batch:
+            try:
+                # Search for the species in taxonomy database
+                search_handle = Entrez.esearch(db="taxonomy", term=f'"{species}"[Scientific Name]')
+                search_result = Entrez.read(search_handle)
+                search_handle.close()
+
+                if search_result["IdList"]:
+                    taxid = search_result["IdList"][0]
+
+                    # Fetch taxonomy data
+                    fetch_handle = Entrez.efetch(db="taxonomy", id=taxid, retmode="xml")
+                    records = Entrez.read(fetch_handle)
+                    fetch_handle.close()
+
+                    # Extract common name if available
+                    if records and len(records) > 0:
+                        taxon = records[0]
+                        if "OtherNames" in taxon and "GenbankCommonName" in taxon["OtherNames"]:
+                            common_names[species] = taxon["OtherNames"]["GenbankCommonName"]
+                        elif "OtherNames" in taxon and "CommonName" in taxon["OtherNames"]:
+                            # Sometimes stored as CommonName instead
+                            common_names[species] = taxon["OtherNames"]["CommonName"][0] if isinstance(taxon["OtherNames"]["CommonName"], list) else taxon["OtherNames"]["CommonName"]
+
+            except Exception as e:
+                print(f"    Warning: Could not fetch common name for {species}: {e}", file=sys.stderr)
+
+            # Be polite to NCBI
+            if api_key:
+                time.sleep(0.1)  # 10 requests per second with API key
+            else:
+                time.sleep(0.34)  # 3 requests per second without API key
+
+    print(f"  Found common names for {len(common_names)} species", file=sys.stderr)
+    return common_names
+
 def main():
     args = parse_args()
 
@@ -204,6 +257,9 @@ def main():
         print("No sequences found", file=sys.stderr)
         sys.exit(1)
 
+    # Fetch common names for all unique species
+    common_names = fetch_common_names(sequences, args.email, args.api_key)
+
     # Write FASTA file
     with open(args.output_fasta, "w") as fasta_file:
         for record, metadata in sequences:
@@ -211,9 +267,9 @@ def main():
 
     # Write metadata TSV
     with open(args.output_metadata, "w") as tsv_file:
-        # Write header with enhanced fields
+        # Write header with enhanced fields including common_name
         headers = [
-            "accession", "organism", "family", "order", "taxonomy",
+            "accession", "organism", "common_name", "family", "order", "taxonomy",
             "description", "length", "date", "country", "location",
             "lat_lon", "specimen_voucher", "collected_by", "collection_date",
             "host", "isolate", "pubmed_id"
@@ -222,6 +278,10 @@ def main():
 
         # Write data
         for record, metadata in sequences:
+            # Add common name to metadata - fallback to scientific name if not found
+            organism = metadata["organism"]
+            metadata["common_name"] = common_names.get(organism, organism)
+
             row = [str(metadata.get(h, "")) for h in headers]
             tsv_file.write("\t".join(row) + "\n")
 

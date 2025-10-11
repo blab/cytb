@@ -25,27 +25,22 @@
       "key": "order_name",
       "title": "order",
       "type": "categorical"
-    },
-    {
-      "key": "organism_name",
-      "title": "species",
-      "type": "categorical"
     }
   ],
   "display_defaults": {
     "map_triplicate": false,
-    "tip_label": "organism_name",
+    "tip_label": "common_name",
     "layout": "unrooted"
   },
   "metadata_columns": [
     "accession",
     "organism_name",
+    "common_name",
     "family",
     "order_name"
   ],
   "filters": [
     "family",
-    "order_name",
-    "organism_name"
+    "order_name"
   ]
 }
