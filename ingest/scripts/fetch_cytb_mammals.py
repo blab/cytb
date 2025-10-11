@@ -8,6 +8,7 @@ import argparse
 import json
 import sys
 import re
+import itertools
 from Bio import Entrez, SeqIO
 from Bio.Seq import Seq
 import time
@@ -159,6 +160,7 @@ def fetch_cytb_sequences(args):
                 "host": "",
                 "isolate": "",
                 "pubmed_id": "",
+                "taxid": "",  # Will be populated from db_xref if available
             }
 
             # Extract references
@@ -180,6 +182,13 @@ def fetch_cytb_sequences(args):
                     metadata["collection_date"] = qualifiers.get("collection_date", [""])[0]
                     metadata["host"] = qualifiers.get("host", [""])[0]
                     metadata["isolate"] = qualifiers.get("isolate", [""])[0]
+
+                    # Extract taxid from db_xref (format: "taxon:12345")
+                    db_xrefs = qualifiers.get("db_xref", [])
+                    for xref in db_xrefs:
+                        if xref.startswith("taxon:"):
+                            metadata["taxid"] = xref.replace("taxon:", "")
+                            break
                     break
 
             sequences.append((record, metadata))
@@ -194,58 +203,104 @@ def fetch_cytb_sequences(args):
 
     return sequences
 
-def fetch_common_names(sequences, email, api_key=None):
-    """Fetch common names from NCBI Taxonomy for unique species."""
+def fetch_common_names(sequences, email, api_key=None, batch_size=800):
+    """
+    Efficiently map TaxID -> common name using bulk efetch.
+    If taxid is missing, falls back to batched esearch (slower but still grouped).
+    """
     Entrez.email = email
     if api_key:
         Entrez.api_key = api_key
 
-    # Get unique species names
-    unique_species = list(set(m["organism"] for r, m in sequences))
-    print(f"\nFetching common names for {len(unique_species)} unique species...", file=sys.stderr)
+    # Collect unique taxids (preferred) and track which species need lookup
+    taxids = set()
+    needs_lookup = {}   # scientific_name -> count
+    for _, m in sequences:
+        tx = m.get("taxid")
+        if tx:
+            taxids.add(str(tx))
+        else:
+            needs_lookup[m["organism"]] = needs_lookup.get(m["organism"], 0) + 1
 
-    common_names = {}
-    batch_size = 20  # Process in batches to be efficient
-
-    for i in range(0, len(unique_species), batch_size):
-        batch = unique_species[i:i+batch_size]
-        print(f"  Processing batch {i//batch_size + 1}: species {i+1}-{min(i+batch_size, len(unique_species))}", file=sys.stderr)
-
-        for species in batch:
+    # If some don't have taxid, map names -> taxid in batches using OR queries
+    if needs_lookup:
+        print(f"\nMissing TaxID for {len(needs_lookup)} species; resolving via batched esearch...", file=sys.stderr)
+        name_to_taxid = {}
+        names = list(needs_lookup.keys())
+        # Build '("Sci name"[SCIN]) OR ("Sci name 2"[SCIN]) ...' chunks
+        for i in range(0, len(names), 200):
+            chunk = names[i:i+200]
+            q = " OR ".join(f'"{n}"[Scientific Name]' for n in chunk)
             try:
-                # Search for the species in taxonomy database
-                search_handle = Entrez.esearch(db="taxonomy", term=f'"{species}"[Scientific Name]')
-                search_result = Entrez.read(search_handle)
-                search_handle.close()
-
-                if search_result["IdList"]:
-                    taxid = search_result["IdList"][0]
-
-                    # Fetch taxonomy data
-                    fetch_handle = Entrez.efetch(db="taxonomy", id=taxid, retmode="xml")
-                    records = Entrez.read(fetch_handle)
-                    fetch_handle.close()
-
-                    # Extract common name if available
-                    if records and len(records) > 0:
-                        taxon = records[0]
-                        if "OtherNames" in taxon and "GenbankCommonName" in taxon["OtherNames"]:
-                            common_names[species] = taxon["OtherNames"]["GenbankCommonName"]
-                        elif "OtherNames" in taxon and "CommonName" in taxon["OtherNames"]:
-                            # Sometimes stored as CommonName instead
-                            common_names[species] = taxon["OtherNames"]["CommonName"][0] if isinstance(taxon["OtherNames"]["CommonName"], list) else taxon["OtherNames"]["CommonName"]
-
+                h = Entrez.esearch(db="taxonomy", term=q, retmax=100000)
+                r = Entrez.read(h)
+                h.close()
+                ids = r.get("IdList", [])
+                if ids:
+                    # Pull back summaries to map each ID to its canonical name
+                    hs = Entrez.esummary(db="taxonomy", id=",".join(ids), retmode="xml")
+                    summ = Entrez.read(hs)
+                    hs.close()
+                    for rec in summ:
+                        sci = rec.get("ScientificName")
+                        tid = rec.get("TaxId")
+                        if sci and tid and sci in needs_lookup:
+                            name_to_taxid[sci] = str(tid)
+                # Be polite to NCBI
+                time.sleep(0.1 if api_key else 0.34)
             except Exception as e:
-                print(f"    Warning: Could not fetch common name for {species}: {e}", file=sys.stderr)
+                print(f"  Warning: name->taxid batch failed ({e})", file=sys.stderr)
 
-            # Be polite to NCBI
-            if api_key:
-                time.sleep(0.1)  # 10 requests per second with API key
-            else:
-                time.sleep(0.34)  # 3 requests per second without API key
+        # Merge resolved taxids
+        for n, tid in name_to_taxid.items():
+            taxids.add(tid)
 
-    print(f"  Found common names for {len(common_names)} species", file=sys.stderr)
-    return common_names
+    if not taxids:
+        print("No TaxIDs available; cannot fetch common names efficiently.", file=sys.stderr)
+        return {}
+
+    # Convert to list for batching
+    taxids_list = list(taxids)
+    print(f"\nFetching common names for {len(taxids_list)} unique TaxIDs in bulk...", file=sys.stderr)
+
+    # Bulk efetch taxonomy records in large batches
+    common_by_taxid = {}
+    for i in range(0, len(taxids_list), batch_size):
+        batch = taxids_list[i:i+batch_size]
+        print(f"  Processing batch {i//batch_size + 1}: TaxIDs {i+1}-{min(i+batch_size, len(taxids_list))}", file=sys.stderr)
+        try:
+            fh = Entrez.efetch(db="taxonomy", id=",".join(batch), retmode="xml")
+            recs = Entrez.read(fh)
+            fh.close()
+            if isinstance(recs, list):
+                for rec in recs:
+                    tid = str(rec.get("TaxId"))
+                    other = rec.get("OtherNames") or {}
+                    common = None
+                    # Prefer GenBank's standardized common name
+                    if "GenbankCommonName" in other:
+                        common = other["GenbankCommonName"]
+                    elif "CommonName" in other:
+                        cn = other["CommonName"]
+                        common = cn[0] if isinstance(cn, list) else cn
+                    if common:
+                        common_by_taxid[tid] = common
+        except Exception as e:
+            print(f"  Warning: taxonomy efetch batch failed ({e})", file=sys.stderr)
+
+        # Rate-limit: 10 req/s with key; otherwise ~3 req/s
+        time.sleep(0.1 if api_key else 0.34)
+
+    # Build species -> common name map for downstream code
+    species_to_common = {}
+    for _, m in sequences:
+        sci = m["organism"]
+        tx = m.get("taxid")
+        if tx and str(tx) in common_by_taxid:
+            species_to_common[sci] = common_by_taxid[str(tx)]
+
+    print(f"  Found common names for {len(species_to_common)} species", file=sys.stderr)
+    return species_to_common
 
 def main():
     args = parse_args()
