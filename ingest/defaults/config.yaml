@@ -4,33 +4,37 @@
 # Define optional config parameters with their default values here so that users
 # do not have to dig through the workflows to figure out the default values
 
-# Required to fetch from NCBI Datasets
-# Since datasets requires species-level taxonomy, we'll use a few representative species for testing
-# In production, you may want to use the Entrez script or provide a comprehensive species list
-test_species:
-  - taxon_id: "9606"   # Homo sapiens (Human)
-    gene_symbol: "MT-CYB"
-  - taxon_id: "10090"  # Mus musculus (Mouse)
-    gene_symbol: "mt-Cytb"
-  - taxon_id: "9913"   # Bos taurus (Cow)
-    gene_symbol: "CYTB"
+# Required to fetch from NCBI via Entrez
+# Fetching configuration
+max_sequences: 100  # Maximum number of sequences to fetch
+min_sequence_length: 1000  # Minimum cytb sequence length (bp)
+max_sequence_length: 1300  # Maximum cytb sequence length (bp)
+quality_threshold: 0.95  # Minimum sequence quality (max 5% ambiguous bases)
+email: "user@example.com"  # Email for NCBI Entrez (required)
+api_key: ""  # Optional NCBI API key for higher rate limits
+include_refseq_only: false  # Whether to fetch only RefSeq sequences
+deduplicate_by_species: true  # Keep only one sequence per species
 
-# For now, use the first test species
-ncbi_taxon_id: "9606"
-gene_symbol: "MT-CYB"
-
-# The list of fields we extract from the gene data report
-# These are parsed from the JSONL data_report file
-ncbi_datasets_fields:
+# The list of fields we extract from Entrez
+# These are parsed from the metadata TSV file
+entrez_metadata_fields:
   - accession
   - organism
-  - taxon_id
-  - common_name
+  - family
+  - order
+  - taxonomy
   - description
-  - gene_id
-  - symbol
-  - type
   - length
+  - date
+  - country
+  - location
+  - lat_lon
+  - specimen_voucher
+  - collected_by
+  - collection_date
+  - host
+  - isolate
+  - pubmed_id
 
 # Config parameters related to the curate pipeline
 curate:
@@ -38,23 +42,31 @@ curate:
   # The path should be relative to the ingest directory.
   local_geolocation_rules: 'geolocation-rules.tsv'
   # List of field names to change where the key is the original field name and the value is the new field name
-  # The original field names should match the ncbi_datasets_fields provided above.
+  # The original field names should match the entrez_metadata_fields provided above.
   # This is the first step in the pipeline, so any references to field names in the configs below should use the new field names
   field_map:
     accession: accession
     organism: organism_name
-    taxon_id: taxon_id
-    common_name: common_name
+    family: family
+    order: order_name
+    taxonomy: taxonomy
     description: description
-    gene_id: gene_id
-    symbol: gene_symbol
-    type: gene_type
     length: sequence_length
+    date: genbank_date
+    country: country
+    location: location
+    lat_lon: lat_lon
+    specimen_voucher: specimen_voucher
+    collected_by: collected_by
+    collection_date: collection_date
+    host: host
+    isolate: isolate
+    pubmed_id: pubmed_id
   # Standardized organism name regex
   # Currently accepts any characters for organism names
   organism_regex: '^.+$'
   # Back up organism name field to use if 'organism' doesn't match regex above
-  organism_backup_fields: ['common_name', 'accession']
+  organism_backup_fields: ['accession']
   # List of date fields to standardize to ISO format YYYY-MM-DD
   date_fields: ['date', 'release_date', 'update_date']
   # List of expected date formats that are present in the date fields provided above
@@ -92,12 +104,18 @@ curate:
   metadata_columns: [
     'accession',
     'organism_name',
-    'taxon_id',
-    'common_name',
+    'family',
+    'order_name',
+    'taxonomy',
     'description',
-    'gene_id',
-    'gene_symbol',
-    'gene_type',
     'sequence_length',
+    'collection_date',
+    'country',
+    'location',
+    'lat_lon',
+    'specimen_voucher',
+    'host',
+    'isolate',
+    'pubmed_id',
     'url',
   ]

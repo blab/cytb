@@ -5,8 +5,20 @@ min_version(
 )  # Snakemake 7.7.0 introduced `retries` directive used in fetch-sequences
 
 
-# Utility functions shared across all workflows.
-include: "../shared/vendored/snakemake/config.smk"
+# Define resolve_config_path function directly to avoid include issues
+import os.path
+
+def resolve_config_path(path):
+    """Resolve a config path, checking defaults directory if not found"""
+    # First check if path exists as-is (relative to working directory)
+    if os.path.exists(path):
+        return path
+    # Then check in defaults directory
+    defaults_path = os.path.join(workflow.basedir, "defaults", path)
+    if os.path.exists(defaults_path):
+        return defaults_path
+    # Fall back to original path
+    return path
 
 
 # Use default configuration values. Extend with Snakemake's --configfile/--config options.Add commentMore actions
