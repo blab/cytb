@@ -53,7 +53,7 @@ rule filter:
             --metadata {input.metadata:q} \
             --metadata-id-columns {params.strain_id:q} \
             --exclude {input.exclude:q} \
-            --output {output.sequences:q} \
+            --output-sequences {output.sequences:q} \
             --group-by {params.group_by:q} \
             --sequences-per-group {params.sequences_per_group:q} \
             --min-length {params.min_length:q}

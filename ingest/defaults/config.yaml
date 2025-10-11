@@ -6,7 +6,7 @@
 
 # Required to fetch from NCBI via Entrez
 # Fetching configuration
-max_sequences: 5000  # Maximum number of sequences to fetch
+max_sequences: 100000  # Maximum number of sequences to fetch
 min_sequence_length: 1000  # Minimum cytb sequence length (bp)
 max_sequence_length: 1300  # Maximum cytb sequence length (bp)
 quality_threshold: 0.95  # Minimum sequence quality (max 5% ambiguous bases)

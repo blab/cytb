@@ -14,7 +14,7 @@ strain_id_field: "accession"
 filter:
   group_by:
     - family
-  sequences_per_group: 100
+  sequences_per_group: 1000
   min_length: 1000
 
 # Refine settings removed - no timetree analysis for cross-species data

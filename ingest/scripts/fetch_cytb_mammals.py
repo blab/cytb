@@ -142,12 +142,31 @@ def fetch_cytb_sequences(args):
 
             # Extract enhanced metadata
             taxonomy = record.annotations.get("taxonomy", [])
+
+            # Find order - look for known mammalian order names in taxonomy
+            order = ""
+            # Known mammalian orders
+            mammalian_orders = {
+                "Rodentia", "Primates", "Chiroptera", "Carnivora", "Artiodactyla",
+                "Perissodactyla", "Lagomorpha", "Eulipotyphla", "Didelphimorphia",
+                "Diprotodontia", "Monotremata", "Cingulata", "Pilosa", "Afrosoricida",
+                "Macroscelidea", "Tubulidentata", "Hyracoidea", "Proboscidea",
+                "Sirenia", "Scandentia", "Dermoptera", "Pholidota", "Cetacea",
+                "Soricomorpha", "Erinaceomorpha", "Paucituberculata", "Microbiotheria",
+                "Notoryctemorphia", "Dasyuromorphia", "Peramelemorphia", "Xenarthra"
+            }
+
+            for t in taxonomy:
+                if t in mammalian_orders:
+                    order = t
+                    break
+
             metadata = {
                 "accession": record.id,
                 "organism": organism,
                 "taxonomy": ";".join(taxonomy),
                 "family": next((t for t in taxonomy if t.endswith("idae")), ""),
-                "order": next((t for t in taxonomy if t.endswith("a") and t != "Mammalia"), ""),
+                "order": order,
                 "description": record.description,
                 "length": seq_len,
                 "date": record.annotations.get("date", ""),
