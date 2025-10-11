@@ -37,7 +37,7 @@ rule filter:
         sequences = "results/filtered.fasta"
     params:
         group_by = as_list(config["filter"]["group_by"]),
-        sequences_per_group = config["filter"]["sequences_per_group"],
+        subsample_max_sequences = config["filter"].get("subsample_max_sequences", 10000),
         min_length = config["filter"]["min_length"],
         strain_id = config.get("strain_id_field", "strain"),
     log:
@@ -55,7 +55,7 @@ rule filter:
             --exclude {input.exclude:q} \
             --output-sequences {output.sequences:q} \
             --group-by {params.group_by:q} \
-            --sequences-per-group {params.sequences_per_group:q} \
+            --subsample-max-sequences {params.subsample_max_sequences:q} \
             --min-length {params.min_length:q}
         """
 

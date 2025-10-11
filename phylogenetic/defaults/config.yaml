@@ -3,7 +3,6 @@ inputs:
     metadata: "data/metadata.tsv"
     sequences: "data/sequences.fasta"
 
-# Config files
 exclude: "exclude.txt"
 reference: "reference_cytb.gb"
 auspice_config: "auspice_config.json"
@@ -14,10 +13,8 @@ strain_id_field: "accession"
 filter:
   group_by:
     - family
-  sequences_per_group: 1000
+  subsample_max_sequences: 10000
   min_length: 1000
-
-# Refine settings removed - no timetree analysis for cross-species data
 
 ancestral:
   inference: "joint"
@@ -25,8 +22,8 @@ ancestral:
 traits:
   columns:
     - family
+    - order_name
   sampling_bias_correction: 3
-  # branch_labels [optional] columns to annotate as branch labels when their inferred value changes across the tree
   branch_labels:
     - family
-  # branch_confidence [optional] minimum confidence of inferred state changes to be considered as branch labels
+    - order_name

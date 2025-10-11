@@ -13,21 +13,22 @@
   "colorings": [
     {
       "key": "gt",
-      "title": "genotype",
+      "title": "Genotype",
       "type": "categorical"
     },
     {
       "key": "family",
-      "title": "family",
+      "title": "Family",
       "type": "categorical"
     },
     {
       "key": "order_name",
-      "title": "order",
+      "title": "Order",
       "type": "categorical"
     }
   ],
   "display_defaults": {
+    "color_by": "family",
     "map_triplicate": false,
     "tip_label": "common_name",
     "layout": "unrooted"
@@ -42,5 +43,9 @@
   "filters": [
     "family",
     "order_name"
+  ],
+  "panels": [
+    "tree",
+    "entropy"
   ]
 }

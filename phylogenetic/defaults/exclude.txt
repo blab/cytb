@@ -1,10 +1,13 @@
 # List of cytb sequences to exclude from the analysis
 # Format: one accession per line
-# These were highly diverged
+# These were highly diverged (maybe reverse complemented?)
+AM392425.1
 KY952576.1
 KY952613.1
 KY952628.1
 KY952629.1
+LM654264.1
+LM654282.1
 MH123829.1
 MN946593.1
 MN946613.1

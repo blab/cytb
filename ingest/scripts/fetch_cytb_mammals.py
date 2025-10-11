@@ -9,6 +9,7 @@ import json
 import sys
 import re
 import itertools
+import signal
 from Bio import Entrez, SeqIO
 from Bio.Seq import Seq
 import time
@@ -46,6 +47,16 @@ def fetch_cytb_sequences(args):
     Entrez.email = args.email
     if args.api_key:
         Entrez.api_key = args.api_key
+
+    # Set up signal handler for graceful interruption
+    interrupted = [False]  # Use list to allow modification in nested function
+
+    def signal_handler(signum, frame):
+        print("\nInterrupted! Saving progress and exiting gracefully...", file=sys.stderr)
+        interrupted[0] = True
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
     # Enhanced search query using taxon ID for precision
     # txid40674 is the NCBI taxon ID for Mammalia
@@ -94,8 +105,15 @@ def fetch_cytb_sequences(args):
     seen_species = set()  # For deduplication
 
     for start in range(0, count, batch_size):
+        # Check for interruption
+        if interrupted[0]:
+            print(f"Interrupted at batch {start//batch_size + 1}. Returning {len(sequences)} sequences fetched so far.", file=sys.stderr)
+            break
+
         end = min(start + batch_size, count)
-        print(f"Fetching batch {start//batch_size + 1}: sequences {start+1}-{end}", file=sys.stderr)
+        batch_num = start//batch_size + 1
+        total_batches = (count + batch_size - 1) // batch_size
+        print(f"Fetching batch {batch_num}/{total_batches}: sequences {start+1}-{end}", file=sys.stderr)
 
         retry_count = 0
         max_retries = 3
@@ -111,17 +129,35 @@ def fetch_cytb_sequences(args):
                     rettype="gb",
                     retmode="text"
                 )
-                break
+
+                # Parse all records in this batch before closing handle
+                batch_records = []
+                try:
+                    for record in SeqIO.parse(fetch_handle, "genbank"):
+                        batch_records.append(record)
+                except Exception as parse_error:
+                    print(f"Error parsing batch {start//batch_size + 1}: {parse_error}", file=sys.stderr)
+                    raise parse_error
+                finally:
+                    fetch_handle.close()
+
+                break  # Success - exit retry loop
+
             except Exception as e:
                 retry_count += 1
                 print(f"Retry {retry_count}/{max_retries} for batch starting at {start}: {e}", file=sys.stderr)
-                time.sleep(5)
+                if retry_count < max_retries:
+                    wait_time = 5 * retry_count  # Exponential backoff
+                    print(f"Waiting {wait_time} seconds before retry...", file=sys.stderr)
+                    time.sleep(wait_time)
 
         if retry_count == max_retries:
             print(f"Failed to fetch batch starting at {start} after {max_retries} retries", file=sys.stderr)
+            print(f"Continuing with partial results...", file=sys.stderr)
             continue
 
-        for record in SeqIO.parse(fetch_handle, "genbank"):
+        # Process the successfully fetched batch
+        for record in batch_records:
             # Quality check: sequence length
             seq_len = len(record.seq)
             if seq_len < args.min_length or seq_len > args.max_length:
@@ -212,14 +248,17 @@ def fetch_cytb_sequences(args):
 
             sequences.append((record, metadata))
 
-        fetch_handle.close()
-
         # Be polite to NCBI (with API key: 10 req/sec, without: 3 req/sec)
         if args.api_key:
             time.sleep(0.1)  # 10 requests per second with API key
         else:
             time.sleep(0.34)  # 3 requests per second without API key
 
+        # Print progress summary every 10 batches
+        if batch_num % 10 == 0:
+            print(f"Progress: Fetched {len(sequences)} sequences so far ({batch_num}/{total_batches} batches)", file=sys.stderr)
+
+    print(f"\nCompleted fetching: got {len(sequences)} total sequences", file=sys.stderr)
     return sequences
 
 def fetch_common_names(sequences, email, api_key=None, batch_size=800):

@@ -24,7 +24,7 @@ FEATURES             Location/Qualifiers
                      /gene="MT-CYB"
                      /gene_synonym="CYTB"
                      /db_xref="GeneID:4519"
-     CDS             1..1141
+     CDS             1..1140
                      /gene="MT-CYB"
                      /gene_synonym="CYTB"
                      /note="cytochrome b"
@@ -32,13 +32,6 @@ FEATURES             Location/Qualifiers
                      /transl_table=2
                      /product="cytochrome b"
                      /protein_id="YP_003024038.1"
-                     /translation="MTNIRKSHPLLKIINNSFIDLPAPSNISAWWNFGSLLGLCLIT
-                     QILTGLFLAMHYTSDTSTAFSSVAHICRDVNYGWLIRNIHANGASMFFICLYMHIGR
-                     GLYYGSYLYKETWNIGVVLLLLVMMTAFVGYVLPWGQMSFWGATVITNLLSAVPYVG
-                     DALVQWIWGGFSVDNATLTRFFAFHFLLPFIIAGATIIHLLFLHETGSNNPTGLNSN
-                     ADKISFHPYFSYKDLLGFVLMLLALVLISLSPNLLGDPDNFTPANPLVTPPHIKPEW
-                     YFLFAYAILRSIPNKLGGVLALLASILVLMVVPILHTSKQRGLTFRPITQFLFWTLV
-                     ADVLILTWIGGMPVEHPFIIIGQVASVIYFLLFLVLIPLAGWLENKALKWA"
 ORIGIN
         1 atgaccaaca ttcgaaaatc ccacccccta ttaaaaatca ttaacaactc attcattgac
        61 ctcccagcac catccaatat ctcagcatga tgaaacttcg gctcacttct aggcctatgc
