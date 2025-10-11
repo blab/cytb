@@ -34,7 +34,6 @@ rule export:
         traits = "results/traits.json",
         nt_muts = "results/nt_muts.json",
         aa_muts = "results/aa_muts.json",
-        colors = resolve_config_path(config["colors"]),
         auspice_config = resolve_config_path(config["auspice_config"]),
         description = resolve_config_path(config["description"]),
     output:
@@ -54,7 +53,6 @@ rule export:
             --metadata {input.metadata:q} \
             --metadata-id-columns {params.strain_id:q} \
             --node-data {input.branch_lengths:q} {input.traits:q} {input.nt_muts:q} {input.aa_muts:q} \
-            --colors {input.colors:q} \
             --auspice-config {input.auspice_config:q} \
             --description {input.description:q} \
             --include-root-sequence-inline \

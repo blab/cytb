@@ -6,7 +6,6 @@ inputs:
 # Config files
 exclude: "exclude.txt"
 reference: "reference_cytb.gb"
-colors: "colors.tsv"
 auspice_config: "auspice_config.json"
 description: "description.md"
 
@@ -15,7 +14,7 @@ strain_id_field: "accession"
 filter:
   group_by:
     - family
-  sequences_per_group: 10
+  sequences_per_group: 100
   min_length: 1000
 
 # Refine settings removed - no timetree analysis for cross-species data
