@@ -282,11 +282,16 @@ def fetch_common_names(sequences, email, api_key=None, batch_size=800):
                         common = other["GenbankCommonName"]
                     elif "CommonName" in other:
                         cn = other["CommonName"]
-                        common = cn[0] if isinstance(cn, list) else cn
+                        if isinstance(cn, list) and cn:
+                            common = cn[0]
+                        elif cn and not isinstance(cn, list):
+                            common = cn
                     if common:
                         common_by_taxid[tid] = common
         except Exception as e:
             print(f"  Warning: taxonomy efetch batch failed ({e})", file=sys.stderr)
+            import traceback
+            traceback.print_exc(file=sys.stderr)
 
         # Rate-limit: 10 req/s with key; otherwise ~3 req/s
         time.sleep(0.1 if api_key else 0.34)
