@@ -25,6 +25,27 @@ This part of the workflow usually includes the following steps:
 See Augur's usage docs for these commands for more details.
 """
 
+rule colors:
+    """Generate colors for geographic regions based on ordering"""
+    input:
+        ordering = resolve_config_path(config.get("color_ordering", "color_ordering.tsv")),
+        color_schemes = resolve_config_path(config.get("color_schemes", "color_schemes.tsv")),
+        metadata = "results/metadata.tsv"
+    output:
+        colors = "results/colors.tsv"
+    log:
+        "logs/colors.txt"
+    shell:
+        r"""
+        exec &> >(tee {log:q})
+
+        python3 scripts/assign-colors.py \
+            --ordering {input.ordering:q} \
+            --color-schemes {input.color_schemes:q} \
+            --output {output.colors:q} \
+            --metadata {input.metadata:q}
+        """
+
 rule export:
     """Exporting data files for for auspice"""
     input:
@@ -34,6 +55,7 @@ rule export:
         traits = "results/traits.json",
         nt_muts = "results/nt_muts.json",
         aa_muts = "results/aa_muts.json",
+        colors = "results/colors.tsv",
         auspice_config = resolve_config_path(config["auspice_config"]),
         description = resolve_config_path(config["description"]),
     output:
@@ -53,6 +75,7 @@ rule export:
             --metadata {input.metadata:q} \
             --metadata-id-columns {params.strain_id:q} \
             --node-data {input.branch_lengths:q} {input.traits:q} {input.nt_muts:q} {input.aa_muts:q} \
+            --colors {input.colors:q} \
             --auspice-config {input.auspice_config:q} \
             --description {input.description:q} \
             --include-root-sequence-inline \
