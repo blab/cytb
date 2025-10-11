@@ -38,7 +38,6 @@ rule filter:
     params:
         group_by = as_list(config["filter"]["group_by"]),
         sequences_per_group = config["filter"]["sequences_per_group"],
-        min_date = config["filter"]["min_date"],
         min_length = config["filter"]["min_length"],
         strain_id = config.get("strain_id_field", "strain"),
     log:
@@ -57,7 +56,6 @@ rule filter:
             --output {output.sequences:q} \
             --group-by {params.group_by:q} \
             --sequences-per-group {params.sequences_per_group:q} \
-            --min-date {params.min_date:q} \
             --min-length {params.min_length:q}
         """
 

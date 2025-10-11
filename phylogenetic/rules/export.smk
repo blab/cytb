@@ -38,7 +38,7 @@ rule export:
         auspice_config = resolve_config_path(config["auspice_config"]),
         description = resolve_config_path(config["description"]),
     output:
-        auspice_json = "auspice/zika.json"
+        auspice_json = "auspice/cytb.json"
     params:
         strain_id = config.get("strain_id_field", "strain"),
     log:

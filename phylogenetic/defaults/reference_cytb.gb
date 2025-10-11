@@ -1,0 +1,63 @@
+LOCUS       NC_012920               1141 bp    DNA     linear   PRI 01-JAN-2025
+DEFINITION  Homo sapiens mitochondrion, cytochrome b (MT-CYB) gene, complete cds.
+ACCESSION   NC_012920
+VERSION     NC_012920.1
+KEYWORDS    RefSeqGene.
+SOURCE      mitochondrion Homo sapiens (human)
+  ORGANISM  Homo sapiens
+            Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi;
+            Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+            Catarrhini; Hominidae; Homo.
+REFERENCE   1  (bases 1 to 1141)
+  AUTHORS   Anderson,S., Bankier,A.T., Barrell,B.G., de Bruijn,M.H.,
+            Coulson,A.R., Drouin,J., Eperon,I.C., Nierlich,D.P., Roe,B.A.,
+            Sanger,F., Schreier,P.H., Smith,A.J., Staden,R. and Young,I.G.
+  TITLE     Sequence and organization of the human mitochondrial genome
+  JOURNAL   Nature 290 (5806), 457-465 (1981)
+FEATURES             Location/Qualifiers
+     source          1..1141
+                     /organism="Homo sapiens"
+                     /organelle="mitochondrion"
+                     /mol_type="genomic DNA"
+                     /db_xref="taxon:9606"
+     gene            1..1141
+                     /gene="MT-CYB"
+                     /gene_synonym="CYTB"
+                     /db_xref="GeneID:4519"
+     CDS             1..1141
+                     /gene="MT-CYB"
+                     /gene_synonym="CYTB"
+                     /note="cytochrome b"
+                     /codon_start=1
+                     /transl_table=2
+                     /product="cytochrome b"
+                     /protein_id="YP_003024038.1"
+                     /translation="MTNIRKSHPLLKIINNSFIDLPAPSNISAWWNFGSLLGLCLIT
+                     QILTGLFLAMHYTSDTSTAFSSVAHICRDVNYGWLIRNIHANGASMFFICLYMHIGR
+                     GLYYGSYLYKETWNIGVVLLLLVMMTAFVGYVLPWGQMSFWGATVITNLLSAVPYVG
+                     DALVQWIWGGFSVDNATLTRFFAFHFLLPFIIAGATIIHLLFLHETGSNNPTGLNSN
+                     ADKISFHPYFSYKDLLGFVLMLLALVLISLSPNLLGDPDNFTPANPLVTPPHIKPEW
+                     YFLFAYAILRSIPNKLGGVLALLASILVLMVVPILHTSKQRGLTFRPITQFLFWTLV
+                     ADVLILTWIGGMPVEHPFIIIGQVASVIYFLLFLVLIPLAGWLENKALKWA"
+ORIGIN
+        1 atgaccaaca ttcgaaaatc ccacccccta ttaaaaatca ttaacaactc attcattgac
+       61 ctcccagcac catccaatat ctcagcatga tgaaacttcg gctcacttct aggcctatgc
+      121 ttaatcaccc aaatcctcac aggcctattc ctagccatac actacacatc agacacatca
+      181 accgccttct catcagtggc ccacatctgc cgagacgtca actacggctg actcatccga
+      241 aatatccacg ccaacggagc ctccatattc ttcatctgcc tatacatgca catcggacga
+      301 ggcctctact acggctccta cctctacaaa gaaacctgaa acatcggagt agtcctacta
+      361 ctactagtca taataacagc cttcgtaggc tacgtactcc catgaggaca aatatcattc
+      421 tgaggagcta cagtcattac caacctactc tcagccgtcc cctacgtagg agacgcccta
+      481 gtacaatgaa tctgaggggg attctcagta gacaacgcca ccctaacccg attcttcgca
+      541 ttccacttcc tacttccatt catcatcgca ggagcaacca tcatccacct cctattccta
+      601 cacgaaacag gatcaaacaa cccaacagga ctaaactcaa acgcagacaa aatctcattc
+      661 cacccctact tctcatataa agacctccta ggattcgtac taatactact agccctcgtg
+      721 ctaatctcat tatcaccaaa cctgctagga gacccagaca acttcacccc agcaaaccca
+      781 ctagtcaccc caccacacat caaaccagaa tgatacttcc tatttgccta cgccatccta
+      841 cgatccatcc caaacaaact aggaggagta ctagccctat tagcatcaat cctagtacta
+      901 atagtagtac caatcctaca cacatcaaaa caacgaggac taaccttccg ccccatcacc
+      961 caattcctat tctgaaccct agtagcagac gtactaatcc taacatgaat tggaggcatg
+     1021 ccagtagaac acccattcat catcatcgga caagtagcat ccgtaatcta cttcctacta
+     1081 ttcctagtac taataccact agcaggatga ctagaaaaca aagcactaaa atgagcttgc
+     1141 c
+//

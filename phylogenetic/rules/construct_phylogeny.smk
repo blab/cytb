@@ -42,11 +42,7 @@ rule tree:
 
 rule refine:
     """
-    Refining tree
-      - estimate timetree
-      - use {params.coalescent} coalescent timescale
-      - estimate {params.date_inference} node dates
-      - filter tips more than {params.clock_filter_iqd} IQDs from clock expectation
+    Refining tree topology and branch lengths
     """
     input:
         tree = "results/tree_raw.nwk",
@@ -56,9 +52,6 @@ rule refine:
         tree = "results/tree.nwk",
         node_data = "results/branch_lengths.json"
     params:
-        coalescent = config["refine"]["coalescent"],
-        date_inference = config["refine"]["date_inference"],
-        clock_filter_iqd = config["refine"]["clock_filter_iqd"],
         strain_id = config.get("strain_id_field", "strain"),
     log:
         "logs/refine.txt",
@@ -75,9 +68,5 @@ rule refine:
             --metadata-id-columns {params.strain_id:q} \
             --output-tree {output.tree:q} \
             --output-node-data {output.node_data:q} \
-            --timetree \
-            --coalescent {params.coalescent:q} \
-            --date-confidence \
-            --date-inference {params.date_inference:q} \
-            --clock-filter-iqd {params.clock_filter_iqd:q}
+            --root mid_point
         """

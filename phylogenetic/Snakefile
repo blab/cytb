@@ -3,8 +3,24 @@ from snakemake.utils import min_version
 # Minimum Snakemake version needed for the storage plugins used in remote_files.smk
 min_version("8.0.0")
 
-# Utility functions shared across all workflows.
-include: "../shared/vendored/snakemake/config.smk"
+# Define helper functions directly to avoid include issues
+import os.path
+
+def resolve_config_path(path):
+    """Resolve a config path, checking defaults directory if not found"""
+    # First check if path exists as-is (relative to working directory)
+    if os.path.exists(path):
+        return path
+    # Then check in defaults directory
+    defaults_path = os.path.join(workflow.basedir, "defaults", path)
+    if os.path.exists(defaults_path):
+        return defaults_path
+    # Fall back to original path
+    return path
+
+def path_or_url(value):
+    """Simple function to handle paths - just returns the value as-is for local files"""
+    return value
 
 
 # Use default configuration values. Extend with Snakemake's --configfile/--config options.Add commentMore actions
@@ -17,10 +33,11 @@ if os.path.exists("config.yaml"):
 
 rule all:
     input:
-        auspice_json = "auspice/zika.json"
+        auspice_json = "auspice/cytb.json"
 
 include: "rules/config.smk"
-include: "../shared/vendored/snakemake/remote_files.smk"
+# Commented out - not needed for local files
+# include: "../shared/vendored/snakemake/remote_files.smk"
 include: "rules/merge_inputs.smk"
 include: "rules/prepare_sequences.smk"
 include: "rules/construct_phylogeny.smk"
