@@ -1,0 +1,43 @@
+inputs:
+  - name: ncbi
+    metadata: "s3://nextstrain-data/files/workflows/zika/metadata.tsv.zst"
+    sequences: "s3://nextstrain-data/files/workflows/zika/sequences.fasta.zst"
+  - name: usvi
+    metadata: "s3://nextstrain-data/files/workflows/zika/metadata_usvi.tsv.zst"
+    sequences: "s3://nextstrain-data/files/workflows/zika/sequences_usvi.fasta.zst"
+
+# Config files
+exclude: "exclude.txt"
+reference: "reference.gb"
+colors: "colors.tsv"
+auspice_config: "auspice_config.json"
+description: "description.md"
+
+strain_id_field: "accession"
+
+filter:
+  group_by:
+    - country
+    - year
+    - month
+  sequences_per_group: 1
+  min_date: 2012
+  min_length: 5385
+
+refine:
+  coalescent: "opt"
+  date_inference: "marginal"
+  clock_filter_iqd: 4
+
+ancestral:
+  inference: "joint"
+
+traits:
+  columns:
+    - region
+    - country
+  sampling_bias_correction: 3
+  # branch_labels [optional] columns to annotate as branch labels when their inferred value changes across the tree
+  branch_labels:
+    - region
+  # branch_confidence [optional] minimum confidence of inferred state changes to be considered as branch labels
