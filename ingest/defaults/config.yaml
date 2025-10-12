@@ -21,7 +21,7 @@ entrez_metadata_fields:
   - accession
   - organism
   - common_name
-  - family
+  - family_name
   - order
   - taxonomy
   - description
@@ -48,8 +48,8 @@ curate:
   field_map:
     accession: accession
     organism: organism_name
-    common_name: common_name
-    family: family
+    taxid: taxid
+    family_name: family_name
     order: order_name
     taxonomy: taxonomy
     description: description
@@ -106,8 +106,9 @@ curate:
   metadata_columns: [
     'accession',
     'organism_name',
+    'taxid',
     'common_name',
-    'family',
+    'family_name',
     'order_name',
     'taxonomy',
     'description',

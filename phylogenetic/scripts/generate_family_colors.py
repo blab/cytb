@@ -40,12 +40,12 @@ def get_family_order_data():
     df = pd.read_csv(metadata_path, sep='\t')
 
     # Check for required columns
-    if 'family' not in df.columns or 'order_name' not in df.columns:
-        print("Error: metadata must have 'family' and 'order_name' columns")
+    if 'family_name' not in df.columns or 'order_name' not in df.columns:
+        print("Error: metadata must have 'family_name' and 'order_name' columns")
         sys.exit(1)
 
     # Get unique family-order combinations
-    family_order = df[['family', 'order_name']].dropna().drop_duplicates()
+    family_order = df[['family_name', 'order_name']].dropna().drop_duplicates()
 
     return family_order
 
@@ -53,7 +53,7 @@ def generate_family_ordering(family_order_df):
     """Generate family ordering grouped by order."""
 
     # Group by order
-    grouped = family_order_df.groupby('order_name')['family'].apply(list).to_dict()
+    grouped = family_order_df.groupby('order_name')['family_name'].apply(list).to_dict()
 
     # Sort orders alphabetically
     sorted_orders = sorted(grouped.keys())
@@ -72,7 +72,7 @@ def generate_family_ordering(family_order_df):
 
         # Add family entries
         for family in families:
-            lines.append(f"family\t{family}")
+            lines.append(f"family_name\t{family}")
 
     return lines
 

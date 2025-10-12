@@ -17,7 +17,7 @@
       "type": "categorical"
     },
     {
-      "key": "family",
+      "key": "family_name",
       "title": "Family",
       "type": "categorical"
     },
@@ -33,7 +33,7 @@
     }
   ],
   "display_defaults": {
-    "color_by": "family",
+    "color_by": "family_name",
     "geo_resolution": "country",
     "map_triplicate": true,
     "tip_label": "common_name",
@@ -43,12 +43,12 @@
     "accession",
     "organism_name",
     "common_name",
-    "family",
+    "family_name",
     "order_name",
     "country"
   ],
   "filters": [
-    "family",
+    "family_name",
     "order_name",
     "country"
   ],

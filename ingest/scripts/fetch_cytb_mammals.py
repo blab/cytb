@@ -201,7 +201,7 @@ def fetch_cytb_sequences(args):
                 "accession": record.id,
                 "organism": organism,
                 "taxonomy": ";".join(taxonomy),
-                "family": next((t for t in taxonomy if t.endswith("idae")), ""),
+                "family_name": next((t for t in taxonomy if t.endswith("idae")), ""),
                 "order": order,
                 "description": record.description,
                 "length": seq_len,
@@ -261,109 +261,6 @@ def fetch_cytb_sequences(args):
     print(f"\nCompleted fetching: got {len(sequences)} total sequences", file=sys.stderr)
     return sequences
 
-def fetch_common_names(sequences, email, api_key=None, batch_size=800):
-    """
-    Efficiently map TaxID -> common name using bulk efetch.
-    If taxid is missing, falls back to batched esearch (slower but still grouped).
-    """
-    Entrez.email = email
-    if api_key:
-        Entrez.api_key = api_key
-
-    # Collect unique taxids (preferred) and track which species need lookup
-    taxids = set()
-    needs_lookup = {}   # scientific_name -> count
-    for _, m in sequences:
-        tx = m.get("taxid")
-        if tx:
-            taxids.add(str(tx))
-        else:
-            needs_lookup[m["organism"]] = needs_lookup.get(m["organism"], 0) + 1
-
-    # If some don't have taxid, map names -> taxid in batches using OR queries
-    if needs_lookup:
-        print(f"\nMissing TaxID for {len(needs_lookup)} species; resolving via batched esearch...", file=sys.stderr)
-        name_to_taxid = {}
-        names = list(needs_lookup.keys())
-        # Build '("Sci name"[SCIN]) OR ("Sci name 2"[SCIN]) ...' chunks
-        for i in range(0, len(names), 200):
-            chunk = names[i:i+200]
-            q = " OR ".join(f'"{n}"[Scientific Name]' for n in chunk)
-            try:
-                h = Entrez.esearch(db="taxonomy", term=q, retmax=100000)
-                r = Entrez.read(h)
-                h.close()
-                ids = r.get("IdList", [])
-                if ids:
-                    # Pull back summaries to map each ID to its canonical name
-                    hs = Entrez.esummary(db="taxonomy", id=",".join(ids), retmode="xml")
-                    summ = Entrez.read(hs)
-                    hs.close()
-                    for rec in summ:
-                        sci = rec.get("ScientificName")
-                        tid = rec.get("TaxId")
-                        if sci and tid and sci in needs_lookup:
-                            name_to_taxid[sci] = str(tid)
-                # Be polite to NCBI
-                time.sleep(0.1 if api_key else 0.34)
-            except Exception as e:
-                print(f"  Warning: name->taxid batch failed ({e})", file=sys.stderr)
-
-        # Merge resolved taxids
-        for n, tid in name_to_taxid.items():
-            taxids.add(tid)
-
-    if not taxids:
-        print("No TaxIDs available; cannot fetch common names efficiently.", file=sys.stderr)
-        return {}
-
-    # Convert to list for batching
-    taxids_list = list(taxids)
-    print(f"\nFetching common names for {len(taxids_list)} unique TaxIDs in bulk...", file=sys.stderr)
-
-    # Bulk efetch taxonomy records in large batches
-    common_by_taxid = {}
-    for i in range(0, len(taxids_list), batch_size):
-        batch = taxids_list[i:i+batch_size]
-        print(f"  Processing batch {i//batch_size + 1}: TaxIDs {i+1}-{min(i+batch_size, len(taxids_list))}", file=sys.stderr)
-        try:
-            fh = Entrez.efetch(db="taxonomy", id=",".join(batch), retmode="xml")
-            recs = Entrez.read(fh)
-            fh.close()
-            if isinstance(recs, list):
-                for rec in recs:
-                    tid = str(rec.get("TaxId"))
-                    other = rec.get("OtherNames") or {}
-                    common = None
-                    # Prefer GenBank's standardized common name
-                    if "GenbankCommonName" in other:
-                        common = other["GenbankCommonName"]
-                    elif "CommonName" in other:
-                        cn = other["CommonName"]
-                        if isinstance(cn, list) and cn:
-                            common = cn[0]
-                        elif cn and not isinstance(cn, list):
-                            common = cn
-                    if common:
-                        common_by_taxid[tid] = common
-        except Exception as e:
-            print(f"  Warning: taxonomy efetch batch failed ({e})", file=sys.stderr)
-            import traceback
-            traceback.print_exc(file=sys.stderr)
-
-        # Rate-limit: 10 req/s with key; otherwise ~3 req/s
-        time.sleep(0.1 if api_key else 0.34)
-
-    # Build species -> common name map for downstream code
-    species_to_common = {}
-    for _, m in sequences:
-        sci = m["organism"]
-        tx = m.get("taxid")
-        if tx and str(tx) in common_by_taxid:
-            species_to_common[sci] = common_by_taxid[str(tx)]
-
-    print(f"  Found common names for {len(species_to_common)} species", file=sys.stderr)
-    return species_to_common
 
 def main():
     args = parse_args()
@@ -375,9 +272,6 @@ def main():
         print("No sequences found", file=sys.stderr)
         sys.exit(1)
 
-    # Fetch common names for all unique species
-    common_names = fetch_common_names(sequences, args.email, args.api_key)
-
     # Write FASTA file
     with open(args.output_fasta, "w") as fasta_file:
         for record, metadata in sequences:
@@ -385,9 +279,9 @@ def main():
 
     # Write metadata TSV
     with open(args.output_metadata, "w") as tsv_file:
-        # Write header with enhanced fields including common_name
+        # Write header with taxid field (common_name will be added in curate pipeline)
         headers = [
-            "accession", "organism", "common_name", "family", "order", "taxonomy",
+            "accession", "organism", "taxid", "family_name", "order", "taxonomy",
             "description", "length", "date", "country", "location",
             "lat_lon", "specimen_voucher", "collected_by", "collection_date",
             "host", "isolate", "pubmed_id"
@@ -396,9 +290,6 @@ def main():
 
         # Write data
         for record, metadata in sequences:
-            # Add common name to metadata - fallback to scientific name if not found
-            organism = metadata["organism"]
-            metadata["common_name"] = common_names.get(organism, organism)
 
             row = [str(metadata.get(h, "")) for h in headers]
             tsv_file.write("\t".join(row) + "\n")
@@ -408,7 +299,7 @@ def main():
 
     # Species diversity statistics
     unique_species = len(set(m["organism"] for r, m in sequences))
-    unique_families = len(set(m["family"] for r, m in sequences if m["family"]))
+    unique_families = len(set(m["family_name"] for r, m in sequences if m["family_name"]))
     unique_orders = len(set(m["order"] for r, m in sequences if m["order"]))
 
     print(f"Species diversity:", file=sys.stderr)

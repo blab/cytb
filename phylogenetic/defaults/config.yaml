@@ -21,10 +21,10 @@ ancestral:
 
 traits:
   columns:
-    - family
+    - family_name
     - order_name
     - country
   sampling_bias_correction: 3
   branch_labels:
-    - family
+    - family_name
     - order_name

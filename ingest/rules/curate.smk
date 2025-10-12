@@ -71,13 +71,39 @@ rule curate:
         """
 
 
+rule fetch_common_names:
+    """Fetch common names for species using NCBI Taxonomy database"""
+    input:
+        metadata = "data/all_metadata.tsv",
+        script = "scripts/fetch_common_names.py"
+    output:
+        metadata = temp("data/all_metadata_common_names.tsv")
+    params:
+        email = config.get("email", ""),
+        api_key = config.get("api_key", "")
+    benchmark:
+        "benchmarks/fetch_common_names.txt"
+    log:
+        "logs/fetch_common_names.txt"
+    shell:
+        r"""
+        exec &> >(tee {log:q})
+
+        python3 {input.script:q} \
+            --email {params.email:q} \
+            $(if [ -n "{params.api_key}" ]; then echo "--api-key {params.api_key:q}"; fi) \
+        < {input.metadata:q} \
+        > {output.metadata:q}
+        """
+
+
 rule add_metadata_columns:
     """Add columns to metadata
     Notable columns:
     - [NEW] url: URL linking to the NCBI GenBank record ('https://www.ncbi.nlm.nih.gov/nuccore/*').
     """
     input:
-        metadata = "data/all_metadata.tsv"
+        metadata = "data/all_metadata_common_names.tsv"
     output:
         metadata = temp("data/all_metadata_added.tsv")
     params:
